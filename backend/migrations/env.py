@@ -7,25 +7,35 @@ from alembic import context
 from backend.core.config import settings
 from backend.database.base import BaseModel
 
+# Import semua model agar BaseModel.metadata mengenali seluruh tabel
+import backend.models  # noqa: F401
+
 # Alembic Config object
 config = context.config
 
-# Configure Python logging
+# Override database URL dari Pydantic Settings
+config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+
+# Setup logging dari alembic.ini
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Metadata untuk autogenerate migration
+# Metadata seluruh model SQLAlchemy
 target_metadata = BaseModel.metadata
 
 
 def run_migrations_offline() -> None:
-    """Run migrations in offline mode."""
+    """
+    Run migrations in offline mode.
+    """
+    url = settings.DATABASE_URL
 
     context.configure(
-        url=settings.DATABASE_URL,
+        url=url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        compare_type=True,
     )
 
     with context.begin_transaction():
@@ -33,8 +43,9 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    """Run migrations in online mode."""
-
+    """
+    Run migrations in online mode.
+    """
     configuration = config.get_section(config.config_ini_section, {})
     configuration["sqlalchemy.url"] = settings.DATABASE_URL
 
@@ -48,6 +59,7 @@ def run_migrations_online() -> None:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
+            compare_type=True,
         )
 
         with context.begin_transaction():
