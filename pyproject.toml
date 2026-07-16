@@ -1,0 +1,27 @@
+[project]
+name = "cctv-object-tracking"
+version = "0.1.0"
+description = "Video-Based Object Tracking and Semantic Attribute Extraction System"
+readme = "README.md"
+requires-python = ">=3.11"
+
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "python-multipart>=0.0.9",
+    "sqlalchemy>=2.0.36",
+    "alembic>=1.14.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.6.0",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "I",
+]
