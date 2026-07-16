@@ -1,11 +1,16 @@
+from __future__ import annotations
+
 import uuid
-from typing import List
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Enum, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.core.enums import JobStatus
 from backend.database.base import BaseModel, TimestampMixin
+
+if TYPE_CHECKING:
+    from backend.models.detection import Detection
 
 
 class VideoJob(BaseModel, TimestampMixin):
@@ -43,7 +48,7 @@ class VideoJob(BaseModel, TimestampMixin):
     )
 
     # Relasi One-to-Many ke Detection
-    detections: Mapped[List["Detection"]] = relationship(
+    detections: Mapped[list[Detection]] = relationship(
         back_populates="video_job",
         cascade="all, delete-orphan",
     )

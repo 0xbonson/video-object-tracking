@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+
 from backend.core.config import settings
 
 # Menggunakan APIRouter agar routing termodularisasi dan terpisah dari main.py

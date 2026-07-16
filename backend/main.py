@@ -1,11 +1,13 @@
 import logging
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
+
+from backend.api.health import router as health_router
 
 # Import layer yang sudah kita bangun sebelumnya
 from backend.core.config import settings
 from backend.core.logging import setup_logging
-from backend.api.health import router as health_router
 
 # Inisialisasi logger untuk file ini
 logger = logging.getLogger(__name__)

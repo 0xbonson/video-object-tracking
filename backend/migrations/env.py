@@ -1,14 +1,12 @@
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config, pool
-
 from alembic import context
-
-from backend.core.config import settings
-from backend.database.base import BaseModel
+from sqlalchemy import engine_from_config, pool
 
 # Import semua model agar BaseModel.metadata mengenali seluruh tabel
 import backend.models  # noqa: F401
+from backend.core.config import settings
+from backend.database.base import BaseModel
 
 # Alembic Config object
 config = context.config
