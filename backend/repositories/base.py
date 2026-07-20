@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Generic, TypeVar
+from typing import Any, Generic, TypeVar
 from uuid import UUID
 
 from pydantic import BaseModel as PydanticModel
@@ -55,9 +55,12 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db: Session,
         *,
         db_obj: ModelType,
-        obj_in: UpdateSchemaType,
+        obj_in: UpdateSchemaType | dict[str, Any],
     ) -> ModelType:
-        update_data = obj_in.model_dump(exclude_unset=True)
+        if isinstance(obj_in, dict):
+            update_data = obj_in
+        else:
+            update_data = obj_in.model_dump(exclude_unset=True)
 
         for field, value in update_data.items():
             setattr(db_obj, field, value)
