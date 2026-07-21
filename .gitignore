@@ -1,19 +1,24 @@
+# =========================
 # Python
+# =========================
 __pycache__/
 *.py[cod]
 
-# Virtual environment
+# Virtual Environment
 .venv/
 
-# Environment variables
+# Environment
 .env
 
-# SQLite
+# Database
 *.db
 
-# Tool caches
-.pytest_cache/
-.ruff_cache/
+# YOLO Weights
+*.pt
+
+# Generated Assets
+assets/images/
+assets/output/
 
 # macOS
 .DS_Store
