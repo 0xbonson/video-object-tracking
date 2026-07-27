@@ -5,6 +5,7 @@ from fastapi import FastAPI
 
 from backend.api.health import router as health_router
 from backend.api.v1.detection import router as detection_router
+from backend.api.v1.search import router as search_router
 from backend.api.v1.upload import router as upload_router
 from backend.api.v1.video_job import router as video_job_router
 from backend.core.config import settings
@@ -62,6 +63,11 @@ def create_app() -> FastAPI:
 
     app.include_router(
         upload_router,
+        prefix="/api/v1",
+    )
+
+    app.include_router(
+        search_router,
         prefix="/api/v1",
     )
 

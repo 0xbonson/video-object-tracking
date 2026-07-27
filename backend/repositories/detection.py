@@ -29,6 +29,7 @@ class CRUDDetection(
                 Detection.track_id == track_id,
             )
             .order_by(Detection.frame_number.desc())
+            .limit(1)
         )
 
         return db.execute(stmt).scalar_one_or_none()
@@ -39,8 +40,14 @@ class CRUDDetection(
         *,
         video_job_id: UUID,
     ) -> list[Detection]:
-        stmt = select(Detection).where(
-            Detection.video_job_id == video_job_id
+        stmt = (
+            select(Detection)
+            .where(
+                Detection.video_job_id == video_job_id,
+            )
+            .order_by(
+                Detection.frame_number,
+            )
         )
 
         return list(db.execute(stmt).scalars().all())

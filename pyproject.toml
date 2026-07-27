@@ -17,6 +17,8 @@ dependencies = [
     "opencv-python>=5.0.0.93",
     "supervision>=0.29.1",
     "onnxruntime>=1.27.0",
+    "lap>=0.5.13",
+    "ollama>=0.6.2",
 ]
 
 [tool.ruff]

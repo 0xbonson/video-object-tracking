@@ -2,19 +2,27 @@ import shutil
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    HTTPException,
+    UploadFile,
+    status,
+)
 from sqlalchemy.orm import Session
 
 from backend.api.deps import get_db
 from backend.schemas.video_job import VideoJobRead
 from backend.services import video_job_service
+from backend.workers.video_processor import video_processor
 
 router = APIRouter(
     prefix="/upload",
     tags=["Upload"],
 )
 
-# Folder penyimpanan video
 VIDEO_STORAGE = Path("backend/storage/videos")
 VIDEO_STORAGE.mkdir(parents=True, exist_ok=True)
 
@@ -32,11 +40,13 @@ ALLOWED_EXTENSIONS = {
     status_code=status.HTTP_201_CREATED,
 )
 def upload_video(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
 ) -> VideoJobRead:
     """
-    Upload video ke server lalu membuat VideoJob baru.
+    Upload video kemudian langsung memulai proses object tracking
+    di background.
     """
 
     extension = Path(file.filename).suffix.lower()
@@ -48,6 +58,7 @@ def upload_video(
         )
 
     filename = f"{uuid4()}{extension}"
+
     destination = VIDEO_STORAGE / filename
 
     with destination.open("wb") as buffer:
@@ -56,6 +67,12 @@ def upload_video(
     job = video_job_service.create_job(
         db=db,
         filename=filename,
+    )
+
+    background_tasks.add_task(
+        video_processor.process,
+        job_id=job.id,
+        video_path=destination,
     )
 
     return job
