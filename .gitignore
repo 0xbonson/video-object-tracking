@@ -22,3 +22,5 @@ assets/output/
 
 # macOS
 .DS_Store
+surveillance.db
+backend/storage/
