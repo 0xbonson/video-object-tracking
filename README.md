@@ -30,3 +30,21 @@ Video Input -> YOLOv11 (Detection) -> ByteTrack -> Size/Class Filter -> Time-Bas
 ### 2. Run the VLM
 ```bash
 ollama run qwen2.5vl:3b
+```
+
+### 3. Backend Setup
+```bash
+git clone [https://github.com/0xbonson/video-object-tracking.git](https://github.com/0xbonson/video-object-tracking.git)
+cd video-object-tracking
+uv venv
+source .venv/bin/activate
+uv pip install -r requirements.txt
+uv run uvicorn backend.main:app --reload
+```
+
+### 4. Frontend Setup
+```bash
+cd frontend
+npm install
+npm run dev
+```
