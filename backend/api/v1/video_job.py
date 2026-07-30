@@ -1,95 +1,51 @@
-from uuid import UUID
-
-from fastapi import APIRouter, Depends, HTTPException, status
+import uuid
+import os
+from pathlib import Path
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from backend.api.deps import get_db
-from backend.schemas.video_job import (
-    VideoJobCreate,
-    VideoJobRead,
-    VideoJobUpdate,
-)
-from backend.services import video_job_service
+from backend.database.session import get_db
+from backend.models.video_job import VideoJob
+from backend.models.detection import Detection
 
 router = APIRouter(
     prefix="/video-jobs",
     tags=["Video Jobs"],
 )
 
+@router.get("")
+def get_all_jobs(db: Session = Depends(get_db)):
+    """Mengambil semua riwayat video yang pernah diunggah."""
+    return db.query(VideoJob).order_by(VideoJob.created_at.desc()).all()
 
-@router.post(
-    "",
-    response_model=VideoJobRead,
-    status_code=status.HTTP_201_CREATED,
-)
-def create_video_job(
-    payload: VideoJobCreate,
-    db: Session = Depends(get_db),
-):
-    return video_job_service.create_job(
-        db=db,
-        filename=payload.filename,
-    )
-
-
-@router.get(
-    "",
-    response_model=list[VideoJobRead],
-)
-def list_video_jobs(
-    skip: int = 0,
-    limit: int = 100,
-    db: Session = Depends(get_db),
-):
-    return video_job_service.get_all_jobs(
-        db=db,
-        skip=skip,
-        limit=limit,
-    )
-
-
-@router.get(
-    "/{job_id}",
-    response_model=VideoJobRead,
-)
-def get_video_job(
-    job_id: UUID,
-    db: Session = Depends(get_db),
-):
-    job = video_job_service.get_job(
-        db=db,
-        job_id=job_id,
-    )
-
-    if job is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Video job not found.",
-        )
-
+@router.get("/{job_id}")
+def get_job(job_id: uuid.UUID, db: Session = Depends(get_db)):
+    """Mengambil status progres proses AI untuk satu video."""
+    job = db.query(VideoJob).filter(VideoJob.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
     return job
 
+@router.delete("/{job_id}")
+def delete_job(job_id: uuid.UUID, db: Session = Depends(get_db)):
+    """Menghapus video beserta seluruh file fisik dan datanya dari SQLite."""
+    job = db.query(VideoJob).filter(VideoJob.id == job_id).first()
+    if job:
+        # Ambil semua data deteksi yang terkait dengan video ini
+        detections = db.query(Detection).filter(Detection.video_job_id == job_id).all()
+        
+        # 1. Hapus SEMUA file fisik foto (crops) dari hard disk agar tidak jadi sampah
+        for det in detections:
+            crop_file = Path(det.crop_path)
+            if crop_file.exists():
+                try:
+                    crop_file.unlink()  # Perintah untuk mendelete file
+                except Exception as e:
+                    print(f"Gagal hapus file {crop_file}: {e}")
 
-@router.patch(
-    "/{job_id}",
-    response_model=VideoJobRead,
-)
-def update_video_job(
-    job_id: UUID,
-    payload: VideoJobUpdate,
-    db: Session = Depends(get_db),
-):
-    job = video_job_service.update_progress(
-        db=db,
-        job_id=job_id,
-        status=payload.status,
-        progress=payload.progress,
-    )
-
-    if job is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Video job not found.",
-        )
-
-    return job
+        # 2. Hapus data dari Database
+        db.query(Detection).filter(Detection.video_job_id == job_id).delete(synchronize_session=False)
+        db.delete(job)
+        db.commit()
+        
+    return {"status": "success", "message": "Berhasil dihapus dari DB dan Hard disk!"}

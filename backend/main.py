@@ -2,6 +2,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from backend.api.health import router as health_router
 from backend.api.v1.detection import router as detection_router
@@ -12,7 +13,6 @@ from backend.core.config import settings
 from backend.core.logging import setup_logging
 
 logger = logging.getLogger(__name__)
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -31,7 +31,6 @@ async def lifespan(app: FastAPI):
 
     logger.info("Mematikan server dan membersihkan resource...")
 
-
 def create_app() -> FastAPI:
     """
     Application Factory Pattern.
@@ -46,30 +45,14 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    app.include_router(
-        health_router,
-        prefix="/api/v1",
-    )
+    # Membuka rute statis agar frontend bisa merender file gambar potongan AI
+    app.mount("/backend/storage", StaticFiles(directory="backend/storage"), name="storage")
 
-    app.include_router(
-        video_job_router,
-        prefix="/api/v1",
-    )
-
-    app.include_router(
-        detection_router,
-        prefix="/api/v1",
-    )
-
-    app.include_router(
-        upload_router,
-        prefix="/api/v1",
-    )
-
-    app.include_router(
-        search_router,
-        prefix="/api/v1",
-    )
+    app.include_router(health_router, prefix="/api/v1")
+    app.include_router(video_job_router, prefix="/api/v1")
+    app.include_router(detection_router, prefix="/api/v1")
+    app.include_router(upload_router, prefix="/api/v1")
+    app.include_router(search_router, prefix="/api/v1")
 
     @app.get("/", tags=["System"])
     async def root():
@@ -81,6 +64,5 @@ def create_app() -> FastAPI:
         }
 
     return app
-
 
 app = create_app()

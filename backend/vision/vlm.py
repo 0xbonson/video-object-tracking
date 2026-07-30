@@ -19,34 +19,32 @@ class VisionLanguageModel:
 
     def describe(self, image_path: str | Path) -> dict:
         """
-        Mengirim gambar ke Vision Language Model
-        dan mengembalikan hasil sebagai Python dict.
+        Mengirim crop ke Vision Language Model
+        dan mengembalikan atribut visual dengan suhu (temperature) 0.0 agar presisi.
         """
 
         prompt = """
-You are an AI vision system.
+You are an expert visual analyst. Analyze the cropped image of the person provided.
+Pay extremely close attention to their clothing, patterns (like batik), and physical appearance.
 
-Analyze the uploaded image.
+Extract the following attributes with high accuracy:
+1. "gender": Must be either "male" or "female". Look closely at facial features, body shape, and hair.
+2. "shirt_color": The dominant color of their top clothing (e.g., black, white, red, blue).
+3. "shirt_type": The style of the top (e.g., t-shirt, blouse, jacket, shirt).
+4. "pants_color": The dominant color of their bottom clothing.
+5. "pants_type": The style of the bottom. If they are wearing a skirt, specifically mention "skirt" or "batik skirt" if patterned.
+6. "confidence": "high", "medium", or "low".
 
-Return ONLY valid JSON.
-
-Schema:
-
+You MUST return ONLY a valid JSON object. Do not include markdown formatting, explanations, or any other text.
+Format strictly like this:
 {
-  "object": "",
-  "shirt_color": "",
-  "shirt_type": "",
-  "pants_color": "",
-  "pants_type": "",
-  "gender": "",
-  "confidence": "high | medium | low"
+  "shirt_color": "black",
+  "shirt_type": "blouse",
+  "pants_color": "brown",
+  "pants_type": "batik skirt",
+  "gender": "female",
+  "confidence": "high"
 }
-
-Rules:
-- Do not explain.
-- Do not use markdown.
-- Do not wrap JSON with ```json.
-- Return JSON only.
 """
 
         response = self.client.chat(
@@ -58,6 +56,9 @@ Rules:
                     "images": [str(image_path)],
                 }
             ],
+            options={
+                "temperature": 0.0
+            }
         )
 
         text = response["message"]["content"].strip()
@@ -75,10 +76,11 @@ Rules:
                 f"VLM tidak mengembalikan JSON.\n\n{text}"
             )
 
-        text = text[start:end + 1]
+        text = text[start : end + 1]
 
         try:
             return json.loads(text)
+
         except json.JSONDecodeError as exc:
             raise RuntimeError(
                 f"Gagal parsing JSON dari VLM.\n\n{text}"
